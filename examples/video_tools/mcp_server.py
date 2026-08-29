@@ -20,9 +20,22 @@ from typing import Annotated
 
 import cv2
 import torch
-from mcp.server.fastmcp import FastMCP
 from mcp.types import ImageContent
 from pydantic import Field
+
+try:
+    from mcp.server.fastmcp import FastMCP
+except ModuleNotFoundError:
+    FastMCP = None
+
+try:
+    from lmms_eval.qwen_video_reader import patch_qwen_vl_utils
+
+    patch_qwen_vl_utils()
+except ImportError:
+    # Keep the standalone LongVT server usable when lmms-eval is not installed.
+    pass
+
 from qwen_vl_utils import fetch_video
 from torchvision.transforms.functional import to_pil_image
 
@@ -34,7 +47,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastMCP("Video Tools MCP Server", "0.1.0")
+if FastMCP is not None:
+    app = FastMCP("Video Tools MCP Server", "0.1.0")
+else:
+    from mcp.server.mcpserver import MCPServer
+
+    app = MCPServer("Video Tools MCP Server", version="0.1.0")
 
 
 @app.tool(name="crop_video", description="Crop a video to a specified duration.")
@@ -96,7 +114,8 @@ def crop_video(
     fps = cap.get(cv2.CAP_PROP_FPS)
     frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     duration = frame_count / fps if fps > 0 else 0
-    print(f"video duration: {duration:.2f}s")
+    # MCP stdio reserves stdout for JSON-RPC messages.
+    logger.info(f"Video duration: {duration:.2f}s")
     cap.release()
 
     # validate time range
