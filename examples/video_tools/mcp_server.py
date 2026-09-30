@@ -57,9 +57,9 @@ else:
 
 @app.tool(name="crop_video", description="Crop a video to a specified duration.")
 def crop_video(
-    video_path: Annotated[str, Field(description="Path to the video file")] = None,
-    start_time: Annotated[float, Field(description="Start time in seconds")] = None,
-    end_time: Annotated[float, Field(description="End time in seconds, must be > start_time")] = None,
+    video_path: Annotated[str, Field(description="Path to the video file")],
+    start_time: Annotated[float, Field(description="Start time in seconds")],
+    end_time: Annotated[float, Field(description="End time in seconds, must be > start_time")],
 ) -> list[ImageContent]:
     """
     Crop a video to a specified duration.
